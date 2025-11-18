@@ -87,3 +87,24 @@ if menu == "Forgot Password":
             st.success("Password berhasil direset!")
         else:
             st.error("Email tidak ditemukan!")
+
+# user profile
+if menu == "User Profile":
+    st.subheader("👤 User Profile")
+
+    if "logged_in" not in st.session_state:
+        st.warning("Harap login dulu.")
+    else:
+        user = st.session_state["logged_in"]
+        st.write(f"Login sebagai: **{user}**")
+
+        new_username = st.text_input("Ubah Username (opsional)")
+        new_email = st.text_input("Ubah Email (opsional)")
+
+        if st.button("Update Profile"):
+            if update_profile(user, new_email, new_username):
+                st.success("Profil berhasil diperbarui!")
+                if new_username:
+                    st.session_state["logged_in"] = new_username
+            else:
+                st.error("Gagal memperbarui profil.")
