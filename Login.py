@@ -2,6 +2,16 @@
 import streamlit as st
 import time
 
+if not st.session_state.get("logged_in", False):
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] {display: none;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 st.set_page_config(
     page_title="Phone Finder",
     page_icon="📱",
