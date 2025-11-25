@@ -205,5 +205,3 @@ if not st.session_state.logged_in:
         reset_ui()
 else:
     main_app()
-
-
