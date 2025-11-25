@@ -1,163 +1,128 @@
+# ...existing code...
 import streamlit as st
+import requests
 
-# ==========================
-# DATA HP (TANPA API)
-# ==========================
-phones = [
-    {
-        "phoneDetails": {
-            "customId": 103001,
-            "yearValue": "2022",
-            "brandValue": "Samsung",
-            "modelValue": "Galaxy S22 Ultra 5G"
-        },
-        "gsmPlatformDetails": {
-            "platformChipset": "Qualcomm Snapdragon 8 Gen 1"
-        },
-        "gsmMemoryDetails": {
-            "memoryInternal": "12GB RAM, 256GB storage"
-        },
-        "gsmMainCameraDetails": {
-            "mainCameraQuad": "108 MP (wide), 10 MP (periscope), 10 MP (telephoto), 12 MP (ultrawide)"
-        },
-        "gsmBatteryDetails": {
-            "batteryType": "Li-Ion 5000 mAh"
-        }
-    },
-    {
-        "phoneDetails": {
-            "customId": 103002,
-            "yearValue": "2021",
-            "brandValue": "Apple",
-            "modelValue": "iPhone 13 Pro Max"
-        },
-        "gsmPlatformDetails": {
-            "platformChipset": "Apple A15 Bionic"
-        },
-        "gsmMemoryDetails": {
-            "memoryInternal": "6GB RAM, 256GB storage"
-        },
-        "gsmMainCameraDetails": {
-            "mainCameraQuad": "12 MP (wide), 12 MP (telephoto), 12 MP (ultrawide)"
-        },
-        "gsmBatteryDetails": {
-            "batteryType": "Li-Ion 4352 mAh"
-        }
-    },
-    {
-        "phoneDetails": {
-            "customId": 103003,
-            "yearValue": "2021",
-            "brandValue": "Xiaomi",
-            "modelValue": "Mi 11 Ultra"
-        },
-        "gsmPlatformDetails": {
-            "platformChipset": "Qualcomm Snapdragon 888"
-        },
-        "gsmMemoryDetails": {
-            "memoryInternal": "12GB RAM, 256GB storage"
-        },
-        "gsmMainCameraDetails": {
-            "mainCameraQuad": "50 MP (wide), 48 MP (periscope), 48 MP (ultrawide)"
-        },
-        "gsmBatteryDetails": {
-            "batteryType": "Li-Ion 5000 mAh"
-        }
+RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
+
+# cek login
+if not st.session_state.get("logged_in", False):
+    st.warning("Silakan login terlebih dahulu untuk mengakses halaman ini.")
+    st.stop()
+
+st.title("⚖️ Bandingkan Dua HP (menggunakan API)")
+
+# tambahkan fungsi untuk memanggil endpoint smart-phone-api1
+SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
+SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
+
+def fetch_sphones(debug: bool = False) -> dict:
+    headers = {
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": SMARTPHONE_API_HOST
     }
-]
+    if debug:
+        st.write("Request URL:", SMARTPHONE_API_URL)
+        st.write("Headers:", {"x-rapidapi-host": SMARTPHONE_API_HOST, "x-rapidapi-key": "****(hidden)"})
+    resp = requests.get(SMARTPHONE_API_URL, headers=headers, timeout=15)
+    if resp.status_code != 200:
+        raise requests.HTTPError(f"{resp.status_code} - {resp.text}")
+    return resp.json()
+# ...existing code...
 
+# tambahkan: ambil daftar HP sekali dan gunakan input teks untuk pencarian
+@st.cache_data(ttl=600)
+def get_phone_list():
+    try:
+        return fetch_sphones()
+    except Exception as e:
+        st.error(f"Gagal mengambil daftar phone: {e}")
+        return []
 
-# ==========================
-# UTILITY FUNCTIONS
-# ==========================
-def get_phone_by_name(name):
-    """Cari HP berdasarkan modelValue"""
-    for hp in phones:
-        if hp["phoneDetails"].get("modelValue") == name:
-            return hp
-    return None
+phones = get_phone_list()
+if not phones:
+    st.warning("Tidak ada data HP tersedia untuk dibandingkan.")
+    st.stop()
 
+# helper untuk mencari phone berdasarkan input user (case-insensitive, partial)
+def find_phone(query: str, phones: list):
+    q = (query or "").strip().lower()
+    if not q:
+        return None, []
+    exact = None
+    partial_matches = []
+    for p in phones:
+        brand = (p.get("brand") or "").strip()
+        name = (p.get("name") or "").strip()
+        combos = [
+            f"{brand} - {name}".lower(),
+            f"{brand} {name}".lower(),
+            name.lower()
+        ]
+        if q in combos[0] or q == combos[1] or q == combos[2]:
+            exact = p
+            break
+        if q in combos[0] or q in combos[1] or q in combos[2] or q in brand.lower():
+            partial_matches.append(p)
+    return exact, partial_matches
 
-def format_phone_for_display(hp):
-    """Format dict HP jadi data readable"""
-    details = hp.get("phoneDetails", {})
-    data = {
-        "Phone Name": details.get("modelValue", "N/A"),
-        "Brand": details.get("brandValue", "N/A"),
-        "Year": details.get("yearValue", "N/A")
-    }
-
-    for category, values in hp.items():
-        if category == "phoneDetails":
-            continue
-        if isinstance(values, dict):
-            for key, value in values.items():
-                label = f"{category} - {key}"
-                data[label] = value
-    return data
-
-
-def generate_simple_analysis(hp1, hp2):
-    d1 = hp1["phoneDetails"]
-    d2 = hp2["phoneDetails"]
-
-    chipset1 = hp1["gsmPlatformDetails"].get("platformChipset", "N/A")
-    chipset2 = hp2["gsmPlatformDetails"].get("platformChipset", "N/A")
-
-    ram1 = hp1["gsmMemoryDetails"].get("memoryInternal", "N/A")
-    ram2 = hp2["gsmMemoryDetails"].get("memoryInternal", "N/A")
-
-    cam1 = hp1["gsmMainCameraDetails"].get("mainCameraQuad", "N/A")
-    cam2 = hp2["gsmMainCameraDetails"].get("mainCameraQuad", "N/A")
-
-    bat1 = hp1["gsmBatteryDetails"].get("batteryType", "N/A")
-    bat2 = hp2["gsmBatteryDetails"].get("batteryType", "N/A")
-
-    return f"""
-## 📊 Analisis Singkat
-
-### {d1['modelValue']} vs {d2['modelValue']}
-
-| Fitur | {d1['modelValue']} | {d2['modelValue']} |
-|-------|----------------------|----------------------|
-| Tahun Rilis | {d1['yearValue']} | {d2['yearValue']} |
-| Chipset | {chipset1} | {chipset2} |
-| RAM/Storage | {ram1} | {ram2} |
-| Kamera | {cam1} | {cam2} |
-| Baterai | {bat1} | {bat2} |
-"""
-
-
-# ==========================
-# STREAMLIT UI
-# ==========================
-st.title("📱 Bandingkan Dua HP (Offline / No API)")
-st.markdown("---")
-
-hp_names = [hp["phoneDetails"]["modelValue"] for hp in phones]
-
-# Dropdown Select
+st.write("Ketik nama HP persis atau sebagian nama (contoh: 'Xiaomi 14 Pro' atau hanya 'Xiaomi').")
 col1, col2 = st.columns(2)
 with col1:
-    hp1_name = st.selectbox("Pilih HP Pertama", hp_names)
-
+    input_a = st.text_input("Masukkan nama HP A", placeholder="contoh: Xiaomi 14 Pro", key="input_a")
 with col2:
-    hp2_name = st.selectbox("Pilih HP Kedua", [n for n in hp_names if n != hp1_name])
+    input_b = st.text_input("Masukkan nama HP B", placeholder="contoh: iPhone 15 Pro Max", key="input_b")
 
-# Button
-if st.button("🔍 Bandingkan", type="primary"):
-    hp1 = get_phone_by_name(hp1_name)
-    hp2 = get_phone_by_name(hp2_name)
+if st.button("Bandingkan"):
+    a_exact, a_matches = find_phone(input_a, phones)
+    b_exact, b_matches = find_phone(input_b, phones)
 
-    colA, colB = st.columns(2)
+    if not input_a or not input_b:
+        st.error("Masukkan nama untuk kedua HP.")
+        st.stop()
 
-    with colA:
-        st.markdown(f"### {hp1_name}")
-        st.json(format_phone_for_display(hp1))
+    if a_exact is None and not a_matches:
+        st.error(f"HP A tidak ditemukan: '{input_a}'. Coba kata kunci lain.")
+        st.stop()
+    if b_exact is None and not b_matches:
+        st.error(f"HP B tidak ditemukan: '{input_b}'. Coba kata kunci lain.")
+        st.stop()
 
-    with colB:
-        st.markdown(f"### {hp2_name}")
-        st.json(format_phone_for_display(hp2))
+    if a_exact is None and len(a_matches) > 1:
+        st.warning("Terdapat beberapa hasil untuk HP A. Contoh hasil:")
+        st.write([f"{p.get('brand')} - {p.get('name')}" for p in a_matches[:5]])
+        st.stop()
+    if b_exact is None and len(b_matches) > 1:
+        st.warning("Terdapat beberapa hasil untuk HP B. Contoh hasil:")
+        st.write([f"{p.get('brand')} - {p.get('name')}" for p in b_matches[:5]])
+        st.stop()
 
-    st.markdown("---")
-    st.markdown(generate_simple_analysis(hp1, hp2))
+    phone_a = a_exact if a_exact is not None else (a_matches[0] if a_matches else None)
+    phone_b = b_exact if b_exact is not None else (b_matches[0] if b_matches else None)
+
+    if phone_a is None or phone_b is None:
+        st.error("Gagal menentukan HP untuk dibandingkan.")
+        st.stop()
+
+    if phone_a == phone_b:
+        st.info("Pilih dua HP berbeda untuk membandingkan.")
+        st.stop()
+
+    # tampilkan hasil
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("HP A")
+        st.write(f"{phone_a.get('brand')} - {phone_a.get('name')}")
+        st.json(phone_a)
+    with c2:
+        st.subheader("HP B")
+        st.write(f"{phone_b.get('brand')} - {phone_b.get('name')}")
+        st.json(phone_b)
+
+
+    keys = ["price", "os", "ram", "storage", "camera", "battery", "support_5g", "brand", "name"]
+    rows = []
+    for k in keys:
+        rows.append({"spec": k, "HP A": phone_a.get(k, "-"), "HP B": phone_b.get(k, "-")})
+    st.subheader("Perbandingan ringkas")
+    st.table(rows)
+# ...existing code...
