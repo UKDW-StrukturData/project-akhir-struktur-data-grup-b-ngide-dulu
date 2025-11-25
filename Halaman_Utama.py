@@ -1,6 +1,6 @@
 import streamlit as st
 
-# ============= CONFIG ==============
+# ============= JUDUL ==============
 st.set_page_config(page_title="Phone Finder", page_icon="📱", layout="wide")
 
 # ============= SESSION STATE ==============
@@ -25,7 +25,7 @@ if not st.session_state.logged_in:
         </style>
     """, unsafe_allow_html=True)
 
-# ============= CSS ==============
+# ============= STYLE CSS - biar mirip sama mockup ==============
 st.markdown("""
 <style>
 .container-box {
@@ -46,9 +46,10 @@ st.markdown("""
 
 .left-title {
     font-size: 60px;
-    font-weight: 800;
+    font-weight: 1000;
     color: #;
-    margin-top: 20px;
+    margin-top: 50px;
+    margin-left: 70px;
 }
 
 .input-box > div > input {
@@ -74,7 +75,7 @@ st.markdown("""
 
 
 # ============================================================
-#                     LOGIN UI STYLISH
+#                     LOGIN UI STYLING
 # ============================================================
 def login_ui():
     st.markdown('<div class="header-title">Login Page</div>', unsafe_allow_html=True)
@@ -88,7 +89,8 @@ def login_ui():
         username = st.text_input("Username", key="username_login")
         password = st.text_input("Password", type="password", key="password_login")
 
-        login_clicked = st.button("Login", key="login_btn")
+        login_clicked = st.button("Login", key="login_btn", use_container_width=True, type="primary")
+        st.markdown("<style>button[kind='primary'] { background-color:#ff4b4b !important; }</style>", unsafe_allow_html=True)
 
         if login_clicked:
             if username in st.session_state.CREDENTIALS and \
@@ -100,7 +102,7 @@ def login_ui():
 
     
         st.markdown(
-    "<p style='font-size:14px; margin-top:10px;'>Belum Memiliki Akun? Daftar dulu ya!</p>",
+    "<p style='font-size:14px; margin-top:10px;'>Don't have an account yet? Register now!</p>",
     unsafe_allow_html=True
 )
         if st.button("Register"):
@@ -109,7 +111,7 @@ def login_ui():
 
 
         st.markdown(
-    "<p style='font-size:14px; margin-top:10px;'>Lupa Password? Reset!</p>",
+    "<p style='font-size:14px; margin-top:10px;'>Forgot your password? Reset!</p>",
     unsafe_allow_html=True
 )
         if st.button("Reset Password"):
@@ -123,11 +125,12 @@ def login_ui():
 def register_ui():
     st.markdown('<div class="header-title">Register</div>', unsafe_allow_html=True)
 
-    new_user = st.text_input("Username Baru")
+    new_user = st.text_input("Username")
     new_pass = st.text_input("Password", type="password")
-    confirm = st.text_input("Konfirmasi Password", type="password")
+    confirm = st.text_input("Password Confirmation", type="password")
 
-    if st.button("Daftar"):
+    if st.button("Register", key=register_ui, help="", type="primary"):
+        st.markdown("<style>button[kind='primary'] { background-color:#ff4b4b !important; }</style>", unsafe_allow_html=True)
         if not new_user or not new_pass:
             st.error("Field tidak boleh kosong.")
         elif new_user in st.session_state.CREDENTIALS:
@@ -140,7 +143,7 @@ def register_ui():
             st.session_state.mode = "login"
             st.rerun()
 
-    if st.button("⬅️ Kembali"):
+    if st.button("Back to Login"):
         st.session_state.mode = "login"
         st.rerun()
 
@@ -152,10 +155,18 @@ def reset_ui():
     st.markdown('<div class="header-title">Reset Password</div>', unsafe_allow_html=True)
 
     user = st.text_input("Username")
-    new_pass = st.text_input("Password Baru", type="password")
-    confirm = st.text_input("Konfirmasi Password", type="password")
+    new_pass = st.text_input("New Password", type="password")
+    confirm = st.text_input("Password Confirmation", type="password")
 
-    if st.button("Reset"):
+    st.markdown(
+        "<p style='color:red; font-weight:600; margin-top:10px;'>"
+        "Make sure you really want to reset your password."
+        "</p>",
+        unsafe_allow_html=True
+    )
+
+    if st.button("Reset Password", key="reset_submit", type="primary"):
+        st.markdown("<style>button[kind='primary'] { background-color:#ff4b4b !important; }</style>", unsafe_allow_html=True)
         if user not in st.session_state.CREDENTIALS:
             st.error("Username tidak ditemukan.")
         elif new_pass != confirm:
@@ -166,7 +177,7 @@ def reset_ui():
             st.session_state.mode = "login"
             st.rerun()
 
-    if st.button("⬅️ Kembali"):
+    if st.button("Back to Login"):
         st.session_state.mode = "login"
         st.rerun()
 
@@ -183,7 +194,7 @@ def main_app():
         st.rerun()
 
 # ============================================================
-#                     ROUTING
+#                     APP FLOW
 # ============================================================
 if not st.session_state.logged_in:
     if st.session_state.mode == "login":
@@ -194,5 +205,3 @@ if not st.session_state.logged_in:
         reset_ui()
 else:
     main_app()
-
-
