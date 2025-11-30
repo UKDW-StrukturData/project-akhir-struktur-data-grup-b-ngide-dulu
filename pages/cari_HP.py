@@ -88,7 +88,7 @@ if st.button("Cari"):
             results.append({
                 "Brand": p.get("brand"),
                 "Name": p.get("name"),
-                "Price": price,
+                "Price": f"Rp {(price*16500):,.0f}".replace(",","."),
                 "RAM": p.get("ram"),
                 "ROM": p.get("storage"),
                 "Camera": p.get("camera"),
