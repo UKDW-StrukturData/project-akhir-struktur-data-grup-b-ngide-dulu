@@ -1,128 +1,169 @@
-# ...existing code...
 import streamlit as st
 import requests
+import pandas as pd
 
+# ============= CONFIG ==============
+st.set_page_config(page_title="Bandingkan HP", page_icon="⚖️", layout="wide")
+
+# ============= PROTEKSI HALAMAN ==============
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.warning("Silakan Login Terlebih Dahulu!")
+    st.switch_page("Halaman_Login.py")
+
+# ============= API SETUP ==============
+# Gunakan API Key Anda
 RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
-
-# cek login
-if not st.session_state.get("logged_in", False):
-    st.warning("Silakan login terlebih dahulu untuk mengakses halaman ini.")
-    st.stop()
-
-st.title("⚖️ Bandingkan Dua HP (menggunakan API)")
-
-# tambahkan fungsi untuk memanggil endpoint smart-phone-api1
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
-def fetch_sphones(debug: bool = False) -> dict:
+# ============= FUNGSI DATA ==============
+@st.cache_data(ttl=3600) # Cache selama 1 jam agar hemat kuota API
+def fetch_all_phones():
+    """Mengambil daftar semua HP dari API"""
     headers = {
         "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": SMARTPHONE_API_HOST
     }
-    if debug:
-        st.write("Request URL:", SMARTPHONE_API_URL)
-        st.write("Headers:", {"x-rapidapi-host": SMARTPHONE_API_HOST, "x-rapidapi-key": "****(hidden)"})
-    resp = requests.get(SMARTPHONE_API_URL, headers=headers, timeout=15)
-    if resp.status_code != 200:
-        raise requests.HTTPError(f"{resp.status_code} - {resp.text}")
-    return resp.json()
-# ...existing code...
-
-# tambahkan: ambil daftar HP sekali dan gunakan input teks untuk pencarian
-@st.cache_data(ttl=600)
-def get_phone_list():
     try:
-        return fetch_sphones()
+        response = requests.get(SMARTPHONE_API_URL, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Validasi format data (pastikan list)
+        if isinstance(data, list):
+            return data
+        else:
+            return []
     except Exception as e:
-        st.error(f"Gagal mengambil daftar phone: {e}")
+        st.error(f"Gagal mengambil data dari server: {e}")
         return []
 
-phones = get_phone_list()
-if not phones:
-    st.warning("Tidak ada data HP tersedia untuk dibandingkan.")
+# ============= UI HEADER ==============
+st.title("⚖️ Bandingkan Spesifikasi HP")
+st.markdown("Pilih dua perangkat di bawah ini untuk melihat perbandingan spesifikasi secara detail.")
+st.markdown("---")
+
+# ============= LOGIC UTAMA ==============
+# 1. Ambil Data
+with st.spinner("Mengambil database HP terbaru..."):
+    phones_data = fetch_all_phones()
+
+if not phones_data:
+    st.warning("Data HP tidak ditemukan atau API bermasalah.")
     st.stop()
 
-# helper untuk mencari phone berdasarkan input user (case-insensitive, partial)
-def find_phone(query: str, phones: list):
-    q = (query or "").strip().lower()
-    if not q:
-        return None, []
-    exact = None
-    partial_matches = []
-    for p in phones:
-        brand = (p.get("brand") or "").strip()
-        name = (p.get("name") or "").strip()
-        combos = [
-            f"{brand} - {name}".lower(),
-            f"{brand} {name}".lower(),
-            name.lower()
+# 2. Siapkan List Nama untuk Dropdown
+# Format: "Samsung - Galaxy S24 Ultra"
+phone_options = [f"{p.get('brand', 'Unknown')} - {p.get('name', 'Unknown')}" for p in phones_data]
+# Mapping balik dari Nama string ke Object Data asli untuk kemudahan akses
+phone_map = {f"{p.get('brand', 'Unknown')} - {p.get('name', 'Unknown')}": p for p in phones_data}
+
+# 3. Input User (Side-by-Side)
+col_input1, col_input2 = st.columns(2)
+
+with col_input1:
+    with st.container(border=True):
+        st.subheader("📱 Perangkat 1")
+        selected_name_a = st.selectbox(
+            "Pilih HP Pertama", 
+            options=phone_options, 
+            index=None, 
+            placeholder="Cari merk atau tipe..."
+        )
+
+with col_input2:
+    with st.container(border=True):
+        st.subheader("📱 Perangkat 2")
+        selected_name_b = st.selectbox(
+            "Pilih HP Kedua", 
+            options=phone_options, 
+            index=None, 
+            placeholder="Cari merk atau tipe..."
+        )
+
+# ============= TAMPILAN PERBANDINGAN ==============
+if selected_name_a and selected_name_b:
+    # Ambil data objek asli berdasarkan nama yang dipilih
+    hp_a = phone_map[selected_name_a]
+    hp_b = phone_map[selected_name_b]
+
+    st.divider()
+
+    # --- Tampilan Judul VS ---
+    col_header1, col_vs, col_header2 = st.columns([4, 1, 4])
+    with col_header1:
+        st.markdown(f"<h3 style='text-align: center;'>{hp_a.get('name')}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center; color: gray;'>{hp_a.get('brand')}</p>", unsafe_allow_html=True)
+    with col_vs:
+        st.markdown("<h1 style='text-align: center; color: red;'>VS</h1>", unsafe_allow_html=True)
+    with col_header2:
+        st.markdown(f"<h3 style='text-align: center;'>{hp_b.get('name')}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center; color: gray;'>{hp_b.get('brand')}</p>", unsafe_allow_html=True)
+
+    # --- Tabel Perbandingan (Dataframe) ---
+    st.write("") # Spacer
+
+    # Normalisasi data agar tidak ada yang None/Null saat masuk tabel
+    def safe_get(d, key):
+        val = d.get(key)
+        return val if val else "-"
+
+    comparison_data = {
+        "Spesifikasi": [
+            "Harga (Perkiraan)", "Sistem Operasi", "RAM", "Penyimpanan", 
+            "Kamera Utama", "Kamera Depan", "Baterai", 
+            "Layar", "Support 5G", "Rilis"
+        ],
+        f"{hp_a.get('name')}": [
+            safe_get(hp_a, 'price'),
+            safe_get(hp_a, 'os'),
+            safe_get(hp_a, 'ram'),
+            safe_get(hp_a, 'storage'),
+            safe_get(hp_a, 'camera'), # API ini mungkin menggabung kamera dalam satu string
+            safe_get(hp_a, 'front_camera'), # Sesuaikan jika key berbeda
+            safe_get(hp_a, 'battery'),
+            safe_get(hp_a, 'display'), # Sesuaikan jika key berbeda
+            "✅ Ya" if safe_get(hp_a, 'support_5g') else "❌ Tidak",
+            safe_get(hp_a, 'release_date')
+        ],
+        f"{hp_b.get('name')}": [
+            safe_get(hp_b, 'price'),
+            safe_get(hp_b, 'os'),
+            safe_get(hp_b, 'ram'),
+            safe_get(hp_b, 'storage'),
+            safe_get(hp_b, 'camera'),
+            safe_get(hp_b, 'front_camera'),
+            safe_get(hp_b, 'battery'),
+            safe_get(hp_b, 'display'),
+            "✅ Ya" if safe_get(hp_b, 'support_5g') else "❌ Tidak",
+            safe_get(hp_b, 'release_date')
         ]
-        if q in combos[0] or q == combos[1] or q == combos[2]:
-            exact = p
-            break
-        if q in combos[0] or q in combos[1] or q in combos[2] or q in brand.lower():
-            partial_matches.append(p)
-    return exact, partial_matches
+    }
 
-st.write("Ketik nama HP persis atau sebagian nama (contoh: 'Xiaomi 14 Pro' atau hanya 'Xiaomi').")
-col1, col2 = st.columns(2)
-with col1:
-    input_a = st.text_input("Masukkan nama HP A", placeholder="contoh: Xiaomi 14 Pro", key="input_a")
-with col2:
-    input_b = st.text_input("Masukkan nama HP B", placeholder="contoh: iPhone 15 Pro Max", key="input_b")
+    df = pd.DataFrame(comparison_data)
+    
+    # Menampilkan Tabel dengan lebar penuh
+    st.dataframe(
+        df, 
+        use_container_width=True, 
+        hide_index=True,
+        column_config={
+            "Spesifikasi": st.column_config.TextColumn("Kategori", width="medium"),
+            f"{hp_a.get('name')}": st.column_config.TextColumn(f"{hp_a.get('name')}", width="large"),
+            f"{hp_b.get('name')}": st.column_config.TextColumn(f"{hp_b.get('name')}", width="large"),
+        }
+    )
 
-if st.button("Bandingkan"):
-    a_exact, a_matches = find_phone(input_a, phones)
-    b_exact, b_matches = find_phone(input_b, phones)
+    # --- Tampilan JSON Mentah (Opsional, untuk debug detail) ---
+    with st.expander("Lihat Data Mentah (JSON)"):
+        c1, c2 = st.columns(2)
+        c1.json(hp_a)
+        c2.json(hp_b)
 
-    if not input_a or not input_b:
-        st.error("Masukkan nama untuk kedua HP.")
-        st.stop()
+else:
+    st.info("👆 Silakan pilih dua HP di atas untuk mulai membandingkan.")
 
-    if a_exact is None and not a_matches:
-        st.error(f"HP A tidak ditemukan: '{input_a}'. Coba kata kunci lain.")
-        st.stop()
-    if b_exact is None and not b_matches:
-        st.error(f"HP B tidak ditemukan: '{input_b}'. Coba kata kunci lain.")
-        st.stop()
-
-    if a_exact is None and len(a_matches) > 1:
-        st.warning("Terdapat beberapa hasil untuk HP A. Contoh hasil:")
-        st.write([f"{p.get('brand')} - {p.get('name')}" for p in a_matches[:5]])
-        st.stop()
-    if b_exact is None and len(b_matches) > 1:
-        st.warning("Terdapat beberapa hasil untuk HP B. Contoh hasil:")
-        st.write([f"{p.get('brand')} - {p.get('name')}" for p in b_matches[:5]])
-        st.stop()
-
-    phone_a = a_exact if a_exact is not None else (a_matches[0] if a_matches else None)
-    phone_b = b_exact if b_exact is not None else (b_matches[0] if b_matches else None)
-
-    if phone_a is None or phone_b is None:
-        st.error("Gagal menentukan HP untuk dibandingkan.")
-        st.stop()
-
-    if phone_a == phone_b:
-        st.info("Pilih dua HP berbeda untuk membandingkan.")
-        st.stop()
-
-    # tampilkan hasil
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("HP A")
-        st.write(f"{phone_a.get('brand')} - {phone_a.get('name')}")
-        st.json(phone_a)
-    with c2:
-        st.subheader("HP B")
-        st.write(f"{phone_b.get('brand')} - {phone_b.get('name')}")
-        st.json(phone_b)
-
-
-    keys = ["price", "os", "ram", "storage", "camera", "battery", "support_5g", "brand", "name"]
-    rows = []
-    for k in keys:
-        rows.append({"spec": k, "HP A": phone_a.get(k, "-"), "HP B": phone_b.get(k, "-")})
-    st.subheader("Perbandingan ringkas")
-    st.table(rows)
-# ...existing code...
+# ============= TOMBOL KEMBALI ==============
+st.markdown("---")
+if st.button("⬅️ Kembali ke Dashboard"):
+    st.switch_page("pages/Halaman_Utama.py")

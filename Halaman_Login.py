@@ -1,7 +1,8 @@
 import streamlit as st
+import componen  # Import file bantu kita
 
 # ============= JUDUL ==============
-st.set_page_config(page_title="Phone Finder", page_icon="📱", layout="wide")
+st.set_page_config(page_title="Phone Finder - Login", page_icon="📱", layout="wide")
 
 # ============= SESSION STATE ==============
 if "mode" not in st.session_state:
@@ -10,22 +11,22 @@ if "mode" not in st.session_state:
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# dummy database
+# Load Database dari file JSON
 if "CREDENTIALS" not in st.session_state:
-    st.session_state.CREDENTIALS = {
-        "admin": "password123",
-        "user": "userpass"
-    }
+    st.session_state.CREDENTIALS = componen.load_users()
 
+# LOGIKA REDIRECT: Jika sudah login, langsung lempar ke Dashboard
+if st.session_state.logged_in:
+    st.switch_page("pages/dashboard.py")
 
-if not st.session_state.logged_in:
-    st.markdown("""
-        <style>
-        [data-testid="stSidebar"] {display: none;}
-        </style>
-    """, unsafe_allow_html=True)
+# Sembunyikan Sidebar di halaman login
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {display: none;}
+    </style>
+""", unsafe_allow_html=True)
 
-# ============= STYLE CSS - biar mirip sama mockup ==============
+# ============= STYLE CSS (TIDAK DIUBAH) ==============
 st.markdown("""
 <style>
 .container-box {
@@ -75,7 +76,7 @@ st.markdown("""
 
 
 # ============================================================
-#                     LOGIN UI STYLING
+#                       LOGIN UI STYLING
 # ============================================================
 def login_ui():
     st.markdown('<div class="header-title">Login Page</div>', unsafe_allow_html=True)
@@ -96,7 +97,9 @@ def login_ui():
             if username in st.session_state.CREDENTIALS and \
                st.session_state.CREDENTIALS[username] == password:
                 st.session_state.logged_in = True
-                st.rerun()
+                st.session_state.username = username # Simpan siapa yang login
+                st.success("Login Sukses!")
+                st.switch_page("pages/Halaman_Utama.py") # <--- PINDAH KE DASHBOARD
             else:
                 st.error("Username atau password salah.")
 
@@ -120,7 +123,7 @@ def login_ui():
 
 
 # ============================================================
-#                     REGISTER UI
+#                       REGISTER UI
 # ============================================================
 def register_ui():
     st.markdown('<div class="header-title">Register</div>', unsafe_allow_html=True)
@@ -129,7 +132,8 @@ def register_ui():
     new_pass = st.text_input("Password", type="password")
     confirm = st.text_input("Password Confirmation", type="password")
 
-    if st.button("Register", key=register_ui, help="", type="primary"):
+    # Key diperbaiki agar string unik
+    if st.button("Register", key="btn_register_action", type="primary"):
         st.markdown("<style>button[kind='primary'] { background-color:#ff4b4b !important; }</style>", unsafe_allow_html=True)
         if not new_user or not new_pass:
             st.error("Field tidak boleh kosong.")
@@ -138,7 +142,10 @@ def register_ui():
         elif new_pass != confirm:
             st.error("Konfirmasi password tidak cocok.")
         else:
+            # Simpan ke State & File
             st.session_state.CREDENTIALS[new_user] = new_pass
+            componen.save_users(st.session_state.CREDENTIALS) # Simpan Permanen
+            
             st.success("Registrasi berhasil! Silakan login.")
             st.session_state.mode = "login"
             st.rerun()
@@ -149,7 +156,7 @@ def register_ui():
 
 
 # ============================================================
-#                     RESET PASSWORD UI
+#                       RESET PASSWORD UI
 # ============================================================
 def reset_ui():
     st.markdown('<div class="header-title">Reset Password</div>', unsafe_allow_html=True)
@@ -172,7 +179,10 @@ def reset_ui():
         elif new_pass != confirm:
             st.error("Konfirmasi password salah.")
         else:
+            # Simpan ke State & File
             st.session_state.CREDENTIALS[user] = new_pass
+            componen.save_users(st.session_state.CREDENTIALS) # Simpan Permanen
+            
             st.success("Password berhasil direset!")
             st.session_state.mode = "login"
             st.rerun()
@@ -181,27 +191,13 @@ def reset_ui():
         st.session_state.mode = "login"
         st.rerun()
 
-
 # ============================================================
-#                   MAIN PAGE (SETELAH LOGIN)
+#                       APP FLOW
 # ============================================================
-def main_app():
-    st.title("📱 Phone Finder")
-    st.write("Selamat datang di aplikasi setelah login!")
-    if st.button("Logout"):
-        st.session_state.logged_in = False
-        st.session_state.mode = "login"
-        st.rerun()
-
-# ============================================================
-#                     APP FLOW
-# ============================================================
-if not st.session_state.logged_in:
-    if st.session_state.mode == "login":
-        login_ui()
-    elif st.session_state.mode == "register":
-        register_ui()
-    elif st.session_state.mode == "reset":
-        reset_ui()
-else:
-    main_app()
+# Menentukan tampilan mana yang muncul (Login/Register/Reset)
+if st.session_state.mode == "login":
+    login_ui()
+elif st.session_state.mode == "register":
+    register_ui()
+elif st.session_state.mode == "reset":
+    reset_ui()
