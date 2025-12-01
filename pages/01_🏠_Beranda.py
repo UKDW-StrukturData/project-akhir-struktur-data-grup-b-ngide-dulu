@@ -1,7 +1,5 @@
 import streamlit as st
 
-# ============= CONFIG ==============
-st.set_page_config(page_title="Dashboard - Phone Finder", page_icon="📱", layout="wide")
 
 # ============= LOGIKA PERSISTENSI (AUTO-LOGIN SAAT REFRESH) ==============
 # 1. Cek apakah ada username tersimpan di URL (Query Params)
@@ -12,8 +10,11 @@ if "user" in st.query_params:
 
 # 2. PROTEKSI: Jika tetap tidak ada login, baru tendang ke halaman utama
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
-    st.warning("Silakan Login Terlebih Dahulu!")
-    st.switch_page("Halaman_Login.py") # Kembali ke Login
+    # Clear dulu session state yang penting
+    for key in ["logged_in", "username", "mode"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.switch_page("Halaman_Login.py")
 
 # 3. SET URL: Jika berhasil masuk, pastikan URL mencatat username
 if st.session_state.logged_in:
@@ -60,7 +61,7 @@ with col2:
         st.write("") # Spacer
         if st.button("Mulai Bandingkan", key="btn_compare", use_container_width=True):
             st.toast("Mengalihkan ke halaman Perbandingan...", icon="⚖️")
-            st.switch_page("pages/bandingkan_HP.py")
+            st.switch_page("pages/03_⚖️_Bandingkan_HP.py")
             
 
 # CARD 3: ANALISIS CERDAS

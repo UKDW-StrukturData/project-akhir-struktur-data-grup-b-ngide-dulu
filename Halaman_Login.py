@@ -16,8 +16,9 @@ if "CREDENTIALS" not in st.session_state:
     st.session_state.CREDENTIALS = componen.load_users()
 
 # LOGIKA REDIRECT: Jika sudah login, langsung lempar ke Dashboard
+# LOGIKA REDIRECT: Jika sudah login, langsung lempar ke Dashboard
 if st.session_state.logged_in:
-    st.switch_page("pages/dashboard.py")
+    st.switch_page("pages/01_🏠_Beranda.py")
 
 # Sembunyikan Sidebar di halaman login
 st.markdown("""
@@ -99,7 +100,7 @@ def login_ui():
                 st.session_state.logged_in = True
                 st.session_state.username = username # Simpan siapa yang login
                 st.success("Login Sukses!")
-                st.switch_page("pages/Halaman_Utama.py") # <--- PINDAH KE DASHBOARD
+                st.switch_page("pages/01_🏠_Beranda.py") # <--- PINDAH KE DASHBOARD
             else:
                 st.error("Username atau password salah.")
 
