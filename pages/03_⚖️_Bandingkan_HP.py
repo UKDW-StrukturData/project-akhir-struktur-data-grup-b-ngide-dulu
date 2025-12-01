@@ -140,6 +140,15 @@ if st.button("Bandingkan"):
     def safe_get(d, key):
         val = d.get(key)
         return val if val else "-"
+    
+    def format_rupiah(price):
+        try:
+            price = float(price)
+            # asumsi API ngasih USD → convert ke IDR
+            return "Rp {:,.0f}".format(price * 16500).replace(",", ".")
+        except:
+            return "-"
+
 
     comparison_data = {
         "Spesifikasi": [
@@ -148,7 +157,7 @@ if st.button("Bandingkan"):
             "Support 5G"
         ],
         f"{hp_a.get('name')}": [
-            safe_get(hp_a, 'price'),
+            format_rupiah(safe_get(hp_a, 'price')),
             safe_get(hp_a, 'os'),
             safe_get(hp_a, 'ram'),
             safe_get(hp_a, 'storage'),
@@ -157,7 +166,7 @@ if st.button("Bandingkan"):
             "✅ Ya" if hp_a.get('support_5g') else "❌ Tidak"
         ],
         f"{hp_b.get('name')}": [
-            safe_get(hp_b, 'price'),
+            format_rupiah(safe_get(hp_b, 'price')),
             safe_get(hp_b, 'os'),
             safe_get(hp_b, 'ram'),
             safe_get(hp_b, 'storage'),
@@ -180,10 +189,10 @@ if st.button("Bandingkan"):
         }
     )
 
-    with st.expander("Lihat Data Mentah (JSON)"):
-        c1, c2 = st.columns(2)
-        c1.json(hp_a)
-        c2.json(hp_b)
+    # with st.expander("Lihat Data Mentah (JSON)"):
+    #     c1, c2 = st.columns(2)
+    #     c1.json(hp_a)
+    #     c2.json(hp_b)
 
 else:
     st.info("👆 Silakan masukkan dua nama HP di atas lalu klik 'Bandingkan'.")
