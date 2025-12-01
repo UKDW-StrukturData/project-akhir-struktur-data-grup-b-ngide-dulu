@@ -59,34 +59,70 @@ phone_options = [f"{p.get('brand', 'Unknown')} - {p.get('name', 'Unknown')}" for
 phone_map = {f"{p.get('brand', 'Unknown')} - {p.get('name', 'Unknown')}": p for p in phones_data}
 
 # 3. Input User (Side-by-Side)
+# ...existing code...
+# 3. Input User (Side-by-Side) -- GANTI DROPDOWN DENGAN INPUT TEKS
 col_input1, col_input2 = st.columns(2)
 
 with col_input1:
-    with st.container(border=True):
-        st.subheader("📱 Perangkat 1")
-        selected_name_a = st.selectbox(
-            "Pilih HP Pertama", 
-            options=phone_options, 
-            index=None, 
-            placeholder="Cari merk atau tipe..."
-        )
+    st.subheader("📱 Perangkat 1")
+    input_name_a = st.text_input("Masukkan nama HP Pertama", placeholder="contoh: Xiaomi 14 Pro")
 
 with col_input2:
-    with st.container(border=True):
-        st.subheader("📱 Perangkat 2")
-        selected_name_b = st.selectbox(
-            "Pilih HP Kedua", 
-            options=phone_options, 
-            index=None, 
-            placeholder="Cari merk atau tipe..."
-        )
+    st.subheader("📱 Perangkat 2")
+    input_name_b = st.text_input("Masukkan nama HP Kedua", placeholder="contoh: iPhone 15 Pro Max")
 
-# ============= TAMPILAN PERBANDINGAN ==============
-if selected_name_a and selected_name_b:
-    # Ambil data objek asli berdasarkan nama yang dipilih
-    hp_a = phone_map[selected_name_a]
-    hp_b = phone_map[selected_name_b]
+# helper: cari phone berdasarkan query (exact atau partial)
+def find_phone(query: str):
+    q = (query or "").strip().lower()
+    if not q:
+        return None, []
+    exact = None
+    partial = []
+    for p in phones_data:
+        brand = (p.get("brand") or "").strip().lower()
+        name = (p.get("name") or "").strip().lower()
+        combined1 = f"{brand} {name}"
+        combined2 = f"{brand} - {name}"
+        if q == name or q == combined1 or q == combined2:
+            exact = p
+            break
+        if q in name or q in brand or q in combined1:
+            partial.append(p)
+    return exact, partial
 
+# tombol bandingkan
+if st.button("Bandingkan"):
+    if not input_name_a or not input_name_b:
+        st.error("Masukkan nama kedua HP untuk dibandingkan.")
+        st.stop()
+
+    a_exact, a_matches = find_phone(input_name_a)
+    b_exact, b_matches = find_phone(input_name_b)
+
+    if a_exact is None and not a_matches:
+        st.error(f"HP Pertama tidak ditemukan: '{input_name_a}'")
+        st.stop()
+    if b_exact is None and not b_matches:
+        st.error(f"HP Kedua tidak ditemukan: '{input_name_b}'")
+        st.stop()
+
+    if a_exact is None and len(a_matches) > 1:
+        st.warning("Terdapat beberapa hasil untuk HP Pertama. Contoh hasil:")
+        st.write([f"{p['brand']} - {p['name']}" for p in a_matches[:5]])
+        st.stop()
+    if b_exact is None and len(b_matches) > 1:
+        st.warning("Terdapat beberapa hasil untuk HP Kedua. Contoh hasil:")
+        st.write([f"{p['brand']} - {p['name']}" for p in b_matches[:5]])
+        st.stop()
+
+    hp_a = a_exact if a_exact is not None else a_matches[0]
+    hp_b = b_exact if b_exact is not None else b_matches[0]
+
+    if hp_a == hp_b:
+        st.info("Pilih dua HP berbeda untuk membandingkan.")
+        st.stop()
+
+    # tampilkan hasil (menggunakan kode tampilan yang sudah ada)
     st.divider()
 
     # --- Tampilan Judul VS ---
@@ -100,9 +136,6 @@ if selected_name_a and selected_name_b:
         st.markdown(f"<h3 style='text-align: center;'>{hp_b.get('name')}</h3>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align: center; color: gray;'>{hp_b.get('brand')}</p>", unsafe_allow_html=True)
 
-    # --- Tabel Perbandingan (Dataframe) ---
-    st.write("") # Spacer
-
     # Normalisasi data agar tidak ada yang None/Null saat masuk tabel
     def safe_get(d, key):
         val = d.get(key)
@@ -111,20 +144,17 @@ if selected_name_a and selected_name_b:
     comparison_data = {
         "Spesifikasi": [
             "Harga (Perkiraan)", "Sistem Operasi", "RAM", "Penyimpanan", 
-            "Kamera Utama", "Kamera Depan", "Baterai", 
-            "Layar", "Support 5G", "Rilis"
+            "Kamera Utama", "Baterai", 
+            "Support 5G"
         ],
         f"{hp_a.get('name')}": [
             safe_get(hp_a, 'price'),
             safe_get(hp_a, 'os'),
             safe_get(hp_a, 'ram'),
             safe_get(hp_a, 'storage'),
-            safe_get(hp_a, 'camera'), # API ini mungkin menggabung kamera dalam satu string
-            safe_get(hp_a, 'front_camera'), # Sesuaikan jika key berbeda
+            safe_get(hp_a, 'camera'),
             safe_get(hp_a, 'battery'),
-            safe_get(hp_a, 'display'), # Sesuaikan jika key berbeda
-            "✅ Ya" if safe_get(hp_a, 'support_5g') else "❌ Tidak",
-            safe_get(hp_a, 'release_date')
+            "✅ Ya" if hp_a.get('support_5g') else "❌ Tidak"
         ],
         f"{hp_b.get('name')}": [
             safe_get(hp_b, 'price'),
@@ -132,17 +162,13 @@ if selected_name_a and selected_name_b:
             safe_get(hp_b, 'ram'),
             safe_get(hp_b, 'storage'),
             safe_get(hp_b, 'camera'),
-            safe_get(hp_b, 'front_camera'),
             safe_get(hp_b, 'battery'),
-            safe_get(hp_b, 'display'),
-            "✅ Ya" if safe_get(hp_b, 'support_5g') else "❌ Tidak",
-            safe_get(hp_b, 'release_date')
+            "✅ Ya" if hp_b.get('support_5g') else "❌ Tidak"
         ]
     }
 
     df = pd.DataFrame(comparison_data)
     
-    # Menampilkan Tabel dengan lebar penuh
     st.dataframe(
         df, 
         use_container_width=True, 
@@ -154,14 +180,14 @@ if selected_name_a and selected_name_b:
         }
     )
 
-    # --- Tampilan JSON Mentah (Opsional, untuk debug detail) ---
     with st.expander("Lihat Data Mentah (JSON)"):
         c1, c2 = st.columns(2)
         c1.json(hp_a)
         c2.json(hp_b)
 
 else:
-    st.info("👆 Silakan pilih dua HP di atas untuk mulai membandingkan.")
+    st.info("👆 Silakan masukkan dua nama HP di atas lalu klik 'Bandingkan'.")
+
 
 # ============= TOMBOL KEMBALI ==============
 st.markdown("---")
