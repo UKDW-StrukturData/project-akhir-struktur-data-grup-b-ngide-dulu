@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import re
+from data import load_local_data   # ⬅️ tambahkan ini
 
 RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
@@ -12,7 +13,7 @@ if not st.session_state.get("logged_in", False):
     st.warning("Silakan login terlebih dahulu untuk mengakses halaman ini.")
     st.stop()
 
-st.title("📱 Masukkan Spesifikasi SmartPhone")
+st.title("📱 Cari SmartPhone")
 
 def fetch_sphones():
     headers = {
@@ -27,10 +28,15 @@ def fetch_sphones():
 @st.cache_data(ttl=600)
 def get_phone_list():
     try:
-        return fetch_sphones()
+        api_data = fetch_sphones()
     except Exception as e:
-        st.error(f"Gagal mengambil daftar phone: {e}")
-        return []
+        st.error(f"Gagal mengambil data API: {e}")
+        api_data = []
+
+    # ⬇️ Tambah data dari data.json
+    local_data = load_local_data()
+
+    return api_data + local_data   # GABUNGKAN
 
 phones = get_phone_list()
 
@@ -53,7 +59,6 @@ st.write("---")
 def parse_gb(value: str) -> int:
     if not value:
         return 0
-    # ambil angka pertama (mis. "12GB", "256GB")
     m = re.search(r'(\d+)', str(value))
     return int(m.group(1)) if m else 0
 
@@ -74,22 +79,36 @@ if st.button("Cari"):
     results = []
     for p in phones:
         try:
+            # Keyword
             if not matches_keyword(p, search_keyword):
                 continue
-            price_usd = p.get("price") or 0
-            price_idr = price_usd * 16500  # Konversi ke IDR
+
+            # Harga
+            price_val = p.get("price") or 0
+
+            # Jika user menambahkan HP → price sudah rupiah
+            if isinstance(price_val, str) and price_val.startswith("Rp"):
+                price_idr = int(re.sub(r"[^\d]", "", price_val))
+            else:
+                price_idr = price_val * 16500
+
+            # Filter harga
+            if price_idr > max_price:
+                continue
+
+            # RAM & ROM
             ram = parse_gb(p.get("ram"))
             rom = parse_gb(p.get("storage"))
-            if price_idr> max_price:
-                continue
+
             if ram < min_ram:
                 continue
             if rom < min_rom:
                 continue
+
             results.append({
                 "Brand": p.get("brand"),
                 "Name": p.get("name"),
-                "Price": f"Rp {price_idr:,.0f}".replace(",","."),
+                "Price": f"Rp {price_idr:,.0f}".replace(",", "."),
                 "RAM": p.get("ram"),
                 "ROM": p.get("storage"),
                 "Camera": p.get("camera"),
@@ -104,4 +123,5 @@ if st.button("Cari"):
     else:
         st.success(f"Ditemukan {len(results)} hasil.")
         st.table(results)
+
 # ...existing code...

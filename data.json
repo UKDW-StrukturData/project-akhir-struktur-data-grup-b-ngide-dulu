@@ -1,0 +1,46 @@
+[
+    {
+        "name": "Galaxy M15 5G",
+        "brand": "Samsung",
+        "os": "Android",
+        "ram": 8,
+        "storage": 256,
+        "camera_main": 65,
+        "battery": 6000,
+        "support_5g": true,
+        "price": 2500000
+    },
+    {
+        "name": "Galaxy M15 5G",
+        "brand": "Samsung",
+        "os": "Android",
+        "ram": 8,
+        "storage": 256,
+        "camera_main": 65,
+        "battery": 6000,
+        "support_5g": true,
+        "price": 2500000
+    },
+    {
+        "name": "Samsung Galaxy M15 5G",
+        "brand": "Samsung",
+        "os": "Android",
+        "ram": "4GB",
+        "storage": "256GB",
+        "camera": "65MP",
+        "battery": "60000mAh",
+        "price": 3500000,
+        "support_5g": "Ya"
+    },
+    {
+        "name": "iPhone 11 Pro Max",
+        "brand": "Apple",
+        "os": "iOS",
+        "ram": "8GB",
+        "storage": "512GB",
+        "camera": "90MP",
+        "battery": "6000mAh",
+        "price": 12000000,
+        "support_5g": "Ya"
+    }
+]

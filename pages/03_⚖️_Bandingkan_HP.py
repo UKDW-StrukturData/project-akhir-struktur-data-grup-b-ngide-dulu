@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
 import pandas as pd
+from analisis.Gemini import analyze_phones
+from data import load_local_data
+
 
 # ============= CONFIG ==============
 st.set_page_config(page_title="Bandingkan HP", page_icon="⚖️", layout="wide")
@@ -46,7 +49,9 @@ st.markdown("---")
 # ============= LOGIC UTAMA ==============
 # 1. Ambil Data
 with st.spinner("Mengambil database HP terbaru..."):
-    phones_data = fetch_all_phones()
+    phones_api = fetch_all_phones()
+    phones_local = load_local_data()
+    phones_data = phones_api + phones_local
 
 if not phones_data:
     st.warning("Data HP tidak ditemukan atau API bermasalah.")
@@ -118,6 +123,12 @@ if st.button("Bandingkan"):
     hp_a = a_exact if a_exact is not None else a_matches[0]
     hp_b = b_exact if b_exact is not None else b_matches[0]
 
+    # Simpan ke session_state agar tidak hilang ketika halaman reload
+    st.session_state.hp_a = hp_a
+    st.session_state.hp_b = hp_b
+    st.session_state.compared = True
+
+
     if hp_a == hp_b:
         st.info("Pilih dua HP berbeda untuk membandingkan.")
         st.stop()
@@ -188,6 +199,28 @@ if st.button("Bandingkan"):
             f"{hp_b.get('name')}": st.column_config.TextColumn(f"{hp_b.get('name')}", width="large"),
         }
     )
+
+    # ============= TOMBOL ANALISIS CERDAS =============
+ 
+ 
+    # ============= TOMBOL ANALISIS CERDAS =============
+    # ============= TOMBOL ANALISIS CERDAS (SELALU ADA SETELAH PERBANDINGAN) =============
+    if st.session_state.get("compared", False):
+
+        st.markdown("---")
+        st.subheader("🔍 Analisis Tambahan")
+
+        if st.button("Jalankan Analisis Cerdas 🧠"):
+            with st.spinner("AI sedang menganalisis kedua HP..."):
+                hasil = analyze_phones(
+                    st.session_state.hp_a,
+                    st.session_state.hp_b
+                )
+
+            st.subheader("📊 Hasil Analisis Cerdas")
+            st.write(hasil)
+
+
 
     # with st.expander("Lihat Data Mentah (JSON)"):
     #     c1, c2 = st.columns(2)
