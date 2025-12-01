@@ -73,16 +73,17 @@ with col2:
 
             
 
-# CARD 3: ANALISIS CERDAS
+# CARD 3: TAMBAHKAN HP FAVORIT ANDA
 with col3:
     with st.container(border=True):
         st.markdown('<div class="card-box">', unsafe_allow_html=True)
 
-        st.markdown("### 🧠 Analisis Cerdas")
-        st.write("Dapatkan rekomendasi HP terbaik berdasarkan budget dan kebutuhan Anda dengan AI.")
+        st.markdown("### ⭐ Tambahkan HP")
+        st.write("Masukkan data HP favorit Anda ke database untuk digunakan pada pencarian & perbandingan.")
 
-        if st.button("Lihat Analisis", key="btn_ai", use_container_width=True):
-            st.toast("Mengalihkan ke halaman Analisis AI...", icon="🧠")
-            st.switch_page("pages/03_⚖️_Bandingkan_HP.py")
+        if st.button("Tambah HP", key="btn_add_hp", use_container_width=True):
+            st.toast("Mengalihkan ke halaman Tambah HP...", icon="⭐")
+            st.switch_page("pages/04_➕_Tambah_HP.py")
 
         st.markdown('</div>', unsafe_allow_html=True)
+

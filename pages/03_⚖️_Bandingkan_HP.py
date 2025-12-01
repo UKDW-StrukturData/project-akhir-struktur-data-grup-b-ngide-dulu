@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-from analisis.Gemini import analyze_phones
+from ollama_ai import ai_answer
 from data import load_local_data
 
 
@@ -200,26 +200,67 @@ if st.button("Bandingkan"):
         }
     )
 
-    # ============= TOMBOL ANALISIS CERDAS =============
- 
- 
-    # ============= TOMBOL ANALISIS CERDAS =============
-    # ============= TOMBOL ANALISIS CERDAS (SELALU ADA SETELAH PERBANDINGAN) =============
-    if st.session_state.get("compared", False):
+    # ============= TOMBOL ANALISIS CERDAS (SETELAH TABEL) =============
+    st.markdown("---")
+    st.subheader("🔍 Analisis Cerdas (Ollama)")
 
-        st.markdown("---")
-        st.subheader("🔍 Analisis Tambahan")
+    # pastikan hp_a dan hp_b tersedia
+    hp_a = st.session_state.get("hp_a")
+    hp_b = st.session_state.get("hp_b")
 
-        if st.button("Jalankan Analisis Cerdas 🧠"):
-            with st.spinner("AI sedang menganalisis kedua HP..."):
-                hasil = analyze_phones(
-                    st.session_state.hp_a,
-                    st.session_state.hp_b
-                )
+    if hp_a and hp_b:
 
-            st.subheader("📊 Hasil Analisis Cerdas")
-            st.write(hasil)
+        if st.button("Jalankan Analisis Cerdas dengan AI"):
+            # 1. Buat prompt
+            prompt = f"""
+            Bandingkan dua HP berikut secara lengkap:
 
+            HP A:
+            {hp_a}
+
+            HP B:
+            {hp_b}
+
+            Buat analisis detail dengan format berikut:
+            ### 📌 Kelebihan HP A
+            - ...
+
+            ### 📌 Kekurangan HP A
+            - ...
+
+            ### 📌 Kelebihan HP B
+            - ...
+
+            ### 📌 Kekurangan HP B
+            - ...
+
+            ### 📷 Perbandingan Kamera
+            ...
+
+            ### 🔋 Perbandingan Baterai
+            ...
+
+            ### ⚡ Performa & RAM
+            ...
+
+            ### 🖥️ Layar
+            ...
+
+            ### 🧩 Sistem Operasi & Dukungan Fitur
+            ...
+
+            ### ⭐ Kesimpulan Akhir
+            HP mana yang lebih **worth it**, dan jelaskan alasannya.
+            """
+
+            with st.spinner("Ollama sedang menganalisis..."):
+                result = ai_answer(prompt)
+
+            st.subheader("📌 Hasil Analisis AI")
+            st.write(result)
+
+    else:
+        st.info("Bandingkan dua HP terlebih dahulu untuk mengaktifkan analisis AI.")
 
 
     # with st.expander("Lihat Data Mentah (JSON)"):
@@ -233,5 +274,5 @@ else:
 
 # ============= TOMBOL KEMBALI ==============
 st.markdown("---")
-if st.button("⬅️ Kembali ke Dashboard"):
-    st.switch_page("pages/Halaman_Utama.py")
+if st.button("⬅️ Kembali ke Beranda"):
+    st.switch_page("pages/01_🏠_Beranda.py")
