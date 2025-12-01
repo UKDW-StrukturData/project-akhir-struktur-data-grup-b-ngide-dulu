@@ -53,7 +53,7 @@ with col1:
 
         if st.button("Buka Pencarian", key="btn_search", use_container_width=True):
             st.toast("Mengalihkan ke halaman Pencarian...", icon="🔍")
-
+            st.switch_page("pages/02_🔍_Cari_HP.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -83,5 +83,6 @@ with col3:
 
         if st.button("Lihat Analisis", key="btn_ai", use_container_width=True):
             st.toast("Mengalihkan ke halaman Analisis AI...", icon="🧠")
+            st.switch_page("pages/03_⚖️_Bandingkan_HP.py")
 
         st.markdown('</div>', unsafe_allow_html=True)
