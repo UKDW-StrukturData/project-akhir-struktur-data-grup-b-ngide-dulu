@@ -76,10 +76,11 @@ if st.button("Cari"):
         try:
             if not matches_keyword(p, search_keyword):
                 continue
-            price = p.get("price") or 0
+            price_usd = p.get("price") or 0
+            price_idr = price_usd * 16500  # Konversi ke IDR
             ram = parse_gb(p.get("ram"))
             rom = parse_gb(p.get("storage"))
-            if price > max_price:
+            if price_idr> max_price:
                 continue
             if ram < min_ram:
                 continue
@@ -88,7 +89,7 @@ if st.button("Cari"):
             results.append({
                 "Brand": p.get("brand"),
                 "Name": p.get("name"),
-                "Price": f"Rp {(price*16500):,.0f}".replace(",","."),
+                "Price": f"Rp {price_idr:,.0f}".replace(",","."),
                 "RAM": p.get("ram"),
                 "ROM": p.get("storage"),
                 "Camera": p.get("camera"),

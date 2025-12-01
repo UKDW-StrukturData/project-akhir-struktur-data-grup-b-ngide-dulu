@@ -49,7 +49,7 @@ with col1:
         st.markdown('<div class="card-box">', unsafe_allow_html=True)
 
         st.markdown("### 🔍 Pencarian HP")
-        st.write("Lacak lokasi perangkat, cek status IMEI, dan identifikasi pemilik nomor HP secara akurat.")
+        st.write("Temukan daftar smartphone berdasarkan merk, harga, RAM, ROM, dan spesifikasi lainnya secara cepat.")
 
         if st.button("Buka Pencarian", key="btn_search", use_container_width=True):
             st.toast("Mengalihkan ke halaman Pencarian...", icon="🔍")
