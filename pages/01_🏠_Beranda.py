@@ -46,30 +46,42 @@ col1, col2, col3 = st.columns(3)
 # CARD 1: PENCARIAN HP
 with col1:
     with st.container(border=True):
+        st.markdown('<div class="card-box">', unsafe_allow_html=True)
+
         st.markdown("### 🔍 Pencarian HP")
         st.write("Lacak lokasi perangkat, cek status IMEI, dan identifikasi pemilik nomor HP secara akurat.")
-        st.write("") # Spacer
+
         if st.button("Buka Pencarian", key="btn_search", use_container_width=True):
-            # Nanti bisa diganti st.switch_page("pages/pencarian.py")
             st.toast("Mengalihkan ke halaman Pencarian...", icon="🔍")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
 
 # CARD 2: BANDINGKAN HP
 with col2:
     with st.container(border=True):
+        st.markdown('<div class="card-box">', unsafe_allow_html=True)
+
         st.markdown("### ⚖️ Bandingkan HP")
         st.write("Komparasi spesifikasi, harga, dan fitur antara dua atau lebih perangkat smartphone.")
-        st.write("") # Spacer
+
         if st.button("Mulai Bandingkan", key="btn_compare", use_container_width=True):
             st.toast("Mengalihkan ke halaman Perbandingan...", icon="⚖️")
             st.switch_page("pages/03_⚖️_Bandingkan_HP.py")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
             
 
 # CARD 3: ANALISIS CERDAS
 with col3:
     with st.container(border=True):
+        st.markdown('<div class="card-box">', unsafe_allow_html=True)
+
         st.markdown("### 🧠 Analisis Cerdas")
         st.write("Dapatkan rekomendasi HP terbaik berdasarkan budget dan kebutuhan Anda dengan AI.")
-        st.write("") # Spacer
+
         if st.button("Lihat Analisis", key="btn_ai", use_container_width=True):
-            # Nanti bisa diganti st.switch_page("pages/analisis.py")
             st.toast("Mengalihkan ke halaman Analisis AI...", icon="🧠")
+
+        st.markdown('</div>', unsafe_allow_html=True)
