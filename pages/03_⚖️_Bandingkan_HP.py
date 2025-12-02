@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-from ollama_ai import ai_answer
 from data import load_local_data
 
 
@@ -202,7 +201,7 @@ if st.button("Bandingkan"):
 
     # ============= TOMBOL ANALISIS CERDAS (SETELAH TABEL) =============
     st.markdown("---")
-    st.subheader("🔍 Analisis Cerdas (Ollama)")
+    st.subheader("🔍 Analisis Cerdas")
 
     # pastikan hp_a dan hp_b tersedia
     hp_a = st.session_state.get("hp_a")
