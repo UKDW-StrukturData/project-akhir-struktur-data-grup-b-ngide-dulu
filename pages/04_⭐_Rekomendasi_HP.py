@@ -1,6 +1,23 @@
 import streamlit as st
 import json
 import random
+import re
+
+# Guard import google generative ai agar app tidak crash jika package/credential bermasalah
+try:
+    import google.generativeai as genai
+    genai.configure(api_key="AIzaSyDmoosYqfR35JM1ZefMphOPHYEveRO44Bo")  # ← ganti API KEY Anda
+    model = genai.GenerativeModel("gemini-pro")
+except Exception:
+    genai = None
+    model = None
+
+# Helper fallback untuk mendapatkan gambar HP jika fungsi eksternal tidak tersedia
+def get_phone_image(name: str) -> str:
+    # Gunakan placeholder sederhana; user bisa ganti dengan URL gambar yang valid atau logika pencarian
+    placeholder = "https://via.placeholder.com/300x300.png?text=No+Image"
+    return placeholder
+
 
 def load_phones():
     """Load data HP dari JSON"""
@@ -10,26 +27,26 @@ def load_phones():
     except:
         return []
 
-def get_phone_image(phone_name):
-    """Fungsi untuk mendapatkan gambar HP (placeholder/dummy)"""
-    # Di sini Anda bisa:
-    # 1. Gunakan gambar dari URL eksternal
-    # 2. Simpan gambar lokal di folder /images
-    # 3. Gunasi API untuk mencari gambar
-    
-    # Untuk sekarang, kita gunakan placeholder dengan nama brand
-    brands = {
-        "Samsung": "https://images.samsung.com/is/image/samsung/assets/id/smartphones/galaxy-s24-ultra/images/galaxy-s24-ultra-highlights-kv.jpg",
-        "iPhone": "https://store.storeimages.cdn-apple.com/8756/as-images.apple.com/is/iphone-15-pro-model-unselect-gallery-2-202309_GEO_EMEA?wid=5120&hei=2880&fmt=webp",
-        "Xiaomi": "https://i01.appmifile.com/webfile/globalimg/products/pc/xiaomi-14/specs-header.png",
-        "OPPO": "https://image.oppo.com/content/dam/oppo/common/mkt/v2-2/f21-pro-5g/navigation/F21pro-navigation-blue-v2.png",
-        "vivo": "https://www.vivo.com/content/dam/vivo/global/portal/smartphone/v30e/product-feature/product-feature-mobile.png",
-        "Realme": "https://image01.realme.net/general/20230911/1694413940839.png"
-    }
-    
-    # Cari berdasarkan brand
-    brand = phone_name.split()[0] if phone_name else "Samsung"
-    return brands.get(brand, "https://via.placeholder.com/300x300?text=HP+Image")
+# Tambahkan helper untuk konversi aman ke int
+def to_int(value):
+    """Convert value (possibly string with non-digits) to int safely. Return 0 if not possible."""
+    if value is None:
+        return 0
+    if isinstance(value, (int, float)):
+        try:
+            return int(value)
+        except:
+            return 0
+    if isinstance(value, str):
+        # Hapus semua karakter bukan digit
+        digits = re.sub(r'[^0-9\-]', '', value)
+        if digits == '' or digits == '-' or digits == '+':
+            return 0
+        try:
+            return int(digits)
+        except:
+            return 0
+    return 0
 
 def get_recommendation_logic(budget, priority, brand_pref, phones):
     """Logika untuk merekomendasikan HP"""
@@ -39,12 +56,12 @@ def get_recommendation_logic(budget, priority, brand_pref, phones):
         score = 0
         match_reasons = []
         
-        # Data HP
-        price = phone.get("harga", 0)
-        camera = phone.get("kamera_utama", 0)
-        battery = phone.get("baterai", 0)
-        ram = phone.get("ram", 0)
-        storage = phone.get("penyimpanan", 0)
+        # Data HP (konversi aman ke int)
+        price = to_int(phone.get("harga", 0))
+        camera = to_int(phone.get("kamera_utama", 0))
+        battery = to_int(phone.get("baterai", 0))
+        ram = to_int(phone.get("ram", 0))
+        storage = to_int(phone.get("penyimpanan", 0))
         brand = phone.get("brand", "").lower()
         
         # 1. Filter berdasarkan BUDGET
@@ -100,6 +117,38 @@ def get_recommendation_logic(budget, priority, brand_pref, phones):
     # Urutkan berdasarkan score
     recommendations.sort(key=lambda x: x["score"], reverse=True)
     return recommendations
+
+def generate_ai_description(phone, use_type):
+    prompt = f"""
+    Kamu adalah AI ahli rekomendasi smartphone. Buat deskripsi singkat tetapi informatif,
+    tidak lebih dari 8-10 baris. Gunakan bahasa manusia yang natural dan persuasif.
+
+    Berikan output dengan format:
+    ## Ringkasan AI
+    - Kelebihan:
+    - Kekurangan:
+    - Cocok untuk pengguna tipe:
+    - Review singkat:
+
+    DATA HP:
+    Nama: {phone.get('nama')}
+    Brand: {phone.get('brand')}
+    Kamera: {phone.get('kamera_utama')}MP
+    RAM: {phone.get('ram')}GB
+    Baterai: {phone.get('baterai')}mAh
+    Storage: {phone.get('penyimpanan')}GB
+    Harga: Rp {phone.get('harga')}
+    Kebutuhan penggunaan user: {use_type}
+    """
+
+    try:
+        if model is None:
+            return "Fitur AI tidak tersedia saat ini."
+        response = model.generate_content(prompt)
+        return response.text
+    except:
+        return "AI gagal menghasilkan review."
+
 
 def main():
     st.set_page_config(page_title="Rekomendasi HP", page_icon="🎯")
@@ -241,6 +290,12 @@ def main():
                             
                             with st.expander("📝 Deskripsi Lengkap"):
                                 st.write(deskripsi)
+    
+                                if st.button(f"💡 Minta Review AI untuk {phone.get('nama')}", key=f"ai_{i}"):
+                                    with st.spinner("AI sedang membuat review..."):
+                                        ai_review = generate_ai_description(phone, use_type)
+                                    st.markdown(ai_review)
+
                         
                         # Tombol aksi
                         col_btn1, col_btn2, col_btn3 = st.columns(3)
@@ -274,14 +329,4 @@ def main():
         st.header("💡 Tips Memilih HP")
         st.info("""
         **Berdasarkan Budget:**
-        - < Rp 2 jt: Entry-level, untuk sosial media & chat
-        - Rp 2-4 jt: Mid-range, sudah bisa gaming ringan
-        - Rp 4-7 jt: High-end, kamera & performa baik
-        - > Rp 7 jt: Flagship, spesifikasi terbaik
-        
-        **Prioritas Kamera:** Pilih HP dengan >48MP
-        **Prioritas Baterai:** Pilih HP dengan >5000mAh
-        """)
-
-if __name__ == "__main__":
-    main()
+        - < Rp 2 jt: Entry-level, untuk sosial media & chat""")
