@@ -78,12 +78,11 @@ with col3:
     with st.container(border=True):
         st.markdown('<div class="card-box">', unsafe_allow_html=True)
 
-        st.markdown("### ⭐ Tambahkan HP")
-        st.write("Masukkan data HP favorit Anda ke database untuk digunakan pada pencarian & perbandingan.")
+        st.markdown("### ⭐ Rekomendasi HP")
+        st.write("Cari rekomendasi HP sesuai kebutuhan anda. Temukan HP terbaik berdasarkan preferensi pribadi Anda.")
 
-        if st.button("Tambah HP", key="btn_add_hp", use_container_width=True):
-            st.toast("Mengalihkan ke halaman Tambah HP...", icon="⭐")
-            st.switch_page("pages/04_➕_Tambah_HP.py")
+        if st.button("Rekomendasi HP", key="btn_add_hp", use_container_width=True):
+            st.toast("Mengalihkan ke halaman Rekomendasi HP...", icon="⭐")
+            st.switch_page("pages/04_⭐_Rekomendasi_HP.py")
 
         st.markdown('</div>', unsafe_allow_html=True)
-
