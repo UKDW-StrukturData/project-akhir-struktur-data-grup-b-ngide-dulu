@@ -1,13 +1,19 @@
-# ...existing code...
 import streamlit as st
 import requests
 import re
+import google.generativeai as genai
+import os
 from data import load_local_data   # ⬅️ tambahkan ini
 
 RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
+# ========== Gemini AI ==========
+API_KEY = "AIzaSyCOQjmbLhVsg0Ely7s7KYnuW6wwVhCWWLQ"
+
+genai.configure(api_key=API_KEY)
+ai_model = genai.GenerativeModel("gemini-2.5-flash")
 # cek login
 if not st.session_state.get("logged_in", False):
     st.warning("Silakan login terlebih dahulu untuk mengakses halaman ini.")
@@ -56,53 +62,77 @@ with col3:
 
 st.write("---")
 
-def parse_gb(value: str) -> int:
+def parse_gb(value):
     if not value:
         return 0
     m = re.search(r'(\d+)', str(value))
     return int(m.group(1)) if m else 0
 
-def matches_keyword(phone: dict, keyword: str) -> bool:
+def matches_keyword(phone, keyword):
     if not keyword:
         return True
-    q = keyword.strip().lower()
-    brand = (phone.get("brand") or "").lower()
-    name = (phone.get("name") or "").lower()
-    return q in brand or q in name or q in f"{brand} {name}"
+    q = keyword.lower()
+    return q in (phone.get("brand", "") + phone.get("name", "")).lower()
 
-# Tombol cari
+# ================= AI EXPLAIN =================
+@st.cache_data(show_spinner=False)
+def ai_explain_results(results):
+    if ai_model is None:
+        return "⚠️ AI tidak aktif."
+
+    limited = results[:5]  # BATAS MAX 5 HP
+
+    prompt = f"""
+Kamu adalah reviewer smartphone berpengalaman.
+
+TUGAS:
+- Jelaskan kelebihan dan kekurangan HP berikut
+- Fokus ke pemakaian nyata (gaming, panas, kamera, baterai)
+- JANGAN menambah HP baru
+- JANGAN mengarang spesifikasi
+
+DATA HP:
+{limited}
+
+FORMAT:
+### Nama HP
+- Cocok untuk:
+- Kelebihan:
+- Kekurangan:
+"""
+
+    try:
+        res = ai_model.generate_content(prompt)
+        return res.text
+    except Exception as e:
+        return f"⚠️ AI gagal menganalisis: {e}"
+
+# ================= SEARCH =================
 if st.button("Cari"):
     if not phones:
         st.error("Data HP tidak tersedia.")
         st.stop()
 
     results = []
+
     for p in phones:
         try:
-            # Keyword
             if not matches_keyword(p, search_keyword):
                 continue
 
-            # Harga
             price_val = p.get("price") or 0
-
-            # Jika user menambahkan HP → price sudah rupiah
             if isinstance(price_val, str) and price_val.startswith("Rp"):
                 price_idr = int(re.sub(r"[^\d]", "", price_val))
             else:
                 price_idr = price_val * 16500
 
-            # Filter harga
             if price_idr > max_price:
                 continue
 
-            # RAM & ROM
             ram = parse_gb(p.get("ram"))
             rom = parse_gb(p.get("storage"))
 
-            if ram < min_ram:
-                continue
-            if rom < min_rom:
+            if ram < min_ram or rom < min_rom:
                 continue
 
             results.append({
@@ -124,4 +154,9 @@ if st.button("Cari"):
         st.success(f"Ditemukan {len(results)} hasil.")
         st.table(results)
 
-# ...existing code...
+        # ===== AI ANALYSIS =====
+        st.markdown("### 🤖 Analisis AI")
+        with st.spinner("AI sedang menganalisis hasil pencarian..."):
+            ai_text = ai_explain_results(results)
+
+        st.markdown(ai_text)
