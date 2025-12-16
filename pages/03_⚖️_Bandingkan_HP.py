@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 from data import load_local_data
+import google.generativeai as genai
+
+
 
 
 # ============= CONFIG ==============
