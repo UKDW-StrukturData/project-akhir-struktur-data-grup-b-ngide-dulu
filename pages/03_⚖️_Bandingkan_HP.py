@@ -2,10 +2,12 @@ import streamlit as st
 import requests
 import pandas as pd
 from data import load_local_data
+
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
 import tempfile
+
 
 # ================= CONFIG =================
 st.set_page_config(page_title="Bandingkan HP", page_icon="⚖️", layout="wide")
