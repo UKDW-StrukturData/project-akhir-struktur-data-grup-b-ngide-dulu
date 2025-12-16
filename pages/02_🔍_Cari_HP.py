@@ -3,14 +3,16 @@ import requests
 import re
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from data import load_local_data   # ⬅️ tambahkan ini
 
-RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
+RAPIDAPI_KEY = os.environ["RAPIDAPI_KEY"]
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
 # ========== Gemini AI ==========
-API_KEY = "AIzaSyCOQjmbLhVsg0Ely7s7KYnuW6wwVhCWWLQ"
+API_KEY = os.environ["GEMINI_API_KEY"]
 
 genai.configure(api_key=API_KEY)
 ai_model = genai.GenerativeModel("gemini-2.5-flash")

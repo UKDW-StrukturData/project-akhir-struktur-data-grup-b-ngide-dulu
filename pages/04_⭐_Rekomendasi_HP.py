@@ -1,9 +1,15 @@
 import streamlit as st
 import google.generativeai as genai
+from dotenv import load_dotenv
+import os
 
 # ================= CONFIG API =================
 try:
-    genai.configure(api_key="AIzaSyCOQjmbLhVsg0Ely7s7KYnuW6wwVhCWWLQ")
+    load_dotenv()
+    gemini_key = os.environ["GEMINI_API_KEY"]
+
+    import google.generativeai as genai
+    genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel("gemini-2.5-flash")
 except Exception:
     model = None
