@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 from data import load_local_data
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,9 +35,6 @@ def extract_number(value):
     except:
         return 0
 
-def normalize(val, max_val):
-    return round(val / max_val, 2) if max_val != 0 else 0
-
 def safe_get(d, key):
     val = d.get(key)
     return val if val else "-"
@@ -47,7 +47,7 @@ def format_rupiah(price):
         return "-"
 
 # ================= API =================
-RAPIDAPI_KEY = "cc1faaabd3mshbea5306ec5b4287p10ec02jsn5b0d08ae2470"
+RAPIDAPI_KEY = os.environ["RAPIDAPI_KEY"]
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
@@ -174,43 +174,55 @@ if st.button("Bandingkan"):
 
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-
     # ================= VISUALISASI =================
     st.markdown("## 📊 Grafik Perbandingan")
+    
+    # BUAT DUA GRAFIK SEJAJAR
+    viz_col1, viz_col2 = st.columns(2)  # <-- BUAT 2 KOLOM UNTUK GRAFIK
+    
+    with viz_col1:
+        st.markdown("### 📈 Grafik Utama")
+        
+        labels = ["Harga", "Baterai", "Storage"]
+        a_vals = [extract_number(hp_a.get(k)) for k in ["price","battery","storage"]]
+        b_vals = [extract_number(hp_b.get(k)) for k in ["price","battery","storage"]]
 
-    labels = ["Harga", "Baterai", "Storage"]
-    a_vals = [extract_number(hp_a.get(k)) for k in ["price","battery","storage"]]
-    b_vals = [extract_number(hp_b.get(k)) for k in ["price","battery","storage"]]
+        # Grafik utama ukuran kecil
+        fig, ax = plt.subplots(figsize=(5, 3))  # Ukuran kecil untuk kolom
+        
+        x = np.arange(len(labels))
+        ax.bar(x - 0.2, a_vals, 0.4, label=hp_a["name"])
+        ax.bar(x + 0.2, b_vals, 0.4, label=hp_b["name"])
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.legend()
+        plt.tight_layout()
+        st.pyplot(fig)
+        
+        # Simpan untuk PDF
+        tmp_chart = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        fig.savefig(tmp_chart.name, bbox_inches="tight", dpi=100)
 
-    fig, ax = plt.subplots()
-    x = np.arange(len(labels))
-    ax.bar(x - 0.2, a_vals, 0.4, label=hp_a["name"])
-    ax.bar(x + 0.2, b_vals, 0.4, label=hp_b["name"])
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend()
-    st.pyplot(fig)
-    # ===== SIMPAN GRAFIK UTAMA UNTUK PDF =====
-    tmp_chart = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-    fig.savefig(tmp_chart.name, bbox_inches="tight")
+    with viz_col2:
+        st.markdown("### 📊 Perbandingan RAM")
+        
+        ram_a = extract_number(hp_a.get("ram"))
+        ram_b = extract_number(hp_b.get("ram"))
 
+        # Grafik RAM ukuran kecil
+        fig_ram, ax_ram = plt.subplots(figsize=(5, 3))  # Ukuran sama dengan grafik utama
+        
+        ax_ram.bar([hp_a["name"], hp_b["name"]], [ram_a, ram_b])
+        ax_ram.set_ylabel("RAM (GB)")
+        ax_ram.set_ylim(0, max(ram_a, ram_b) + 2)
+        ax_ram.set_title("Kapasitas RAM")
+        plt.tight_layout()
+        st.pyplot(fig_ram)
+        
+        # Simpan untuk PDF
+        tmp_ram = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        fig_ram.savefig(tmp_ram.name, bbox_inches="tight", dpi=100)
 
-    # ================= TAMBAHAN VISUALISASI RAM =================
-    st.markdown("### 📊 Perbandingan RAM")
-
-    ram_a = extract_number(hp_a.get("ram"))
-    ram_b = extract_number(hp_b.get("ram"))
-
-    fig_ram, ax_ram = plt.subplots()
-    ax_ram.bar([hp_a["name"], hp_b["name"]], [ram_a, ram_b])
-    ax_ram.set_ylabel("RAM (GB)")
-    ax_ram.set_ylim(0, max(ram_a, ram_b) + 2)
-    ax_ram.set_title("Perbandingan Kapasitas RAM")
-
-    st.pyplot(fig_ram)
-    # ===== SIMPAN GRAFIK RAM UNTUK PDF =====
-    tmp_ram = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-    fig_ram.savefig(tmp_ram.name, bbox_inches="tight")
     # ================= EXPORT PDF =================
     st.markdown("## 📄 Download Sebagai PDF")
 
@@ -264,15 +276,15 @@ if st.button("Bandingkan"):
         pdf.cell(65, 8, str(values_a[i]), 1)
         pdf.cell(65, 8, str(values_b[i]), 1)
         pdf.ln()
-        # ===== TAMBAHKAN GRAFIK KE PDF =====
+    
+    # ===== TAMBAHKAN GRAFIK KE PDF =====
     pdf.add_page()
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Grafik Perbandingan HP", ln=True)
 
-    pdf.image(tmp_chart.name, x=10, w=180)
+    pdf.image(tmp_chart.name, x=20, w=170)
     pdf.ln(5)
-    pdf.image(tmp_ram.name, x=10, w=180)
-
+    pdf.image(tmp_ram.name, x=30, w=150)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         pdf.output(tmp.name)
@@ -283,8 +295,6 @@ if st.button("Bandingkan"):
             file_name="Perbandingan_HP.pdf",
             mime="application/pdf"
         )
-
-
 
 # ================= NAVIGATION =================
 st.divider()
