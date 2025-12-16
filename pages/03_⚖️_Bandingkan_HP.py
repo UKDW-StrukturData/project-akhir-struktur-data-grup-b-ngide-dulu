@@ -2,10 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 from data import load_local_data
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
 import matplotlib.pyplot as plt
 import numpy as np
 from fpdf import FPDF
@@ -47,7 +43,8 @@ def format_rupiah(price):
         return "-"
 
 # ================= API =================
-RAPIDAPI_KEY = os.environ["RAPIDAPI_KEY"]
+# GANTI: os.environ -> st.secrets
+RAPIDAPI_KEY = st.secrets["RAPIDAPI_KEY"]
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
@@ -178,7 +175,7 @@ if st.button("Bandingkan"):
     st.markdown("## 📊 Grafik Perbandingan")
     
     # BUAT DUA GRAFIK SEJAJAR
-    viz_col1, viz_col2 = st.columns(2)  # <-- BUAT 2 KOLOM UNTUK GRAFIK
+    viz_col1, viz_col2 = st.columns(2)
     
     with viz_col1:
         st.markdown("### 📈 Grafik Utama")
@@ -187,8 +184,7 @@ if st.button("Bandingkan"):
         a_vals = [extract_number(hp_a.get(k)) for k in ["price","battery","storage"]]
         b_vals = [extract_number(hp_b.get(k)) for k in ["price","battery","storage"]]
 
-        # Grafik utama ukuran kecil
-        fig, ax = plt.subplots(figsize=(5, 3))  # Ukuran kecil untuk kolom
+        fig, ax = plt.subplots(figsize=(5, 3))
         
         x = np.arange(len(labels))
         ax.bar(x - 0.2, a_vals, 0.4, label=hp_a["name"])
@@ -209,8 +205,7 @@ if st.button("Bandingkan"):
         ram_a = extract_number(hp_a.get("ram"))
         ram_b = extract_number(hp_b.get("ram"))
 
-        # Grafik RAM ukuran kecil
-        fig_ram, ax_ram = plt.subplots(figsize=(5, 3))  # Ukuran sama dengan grafik utama
+        fig_ram, ax_ram = plt.subplots(figsize=(5, 3))
         
         ax_ram.bar([hp_a["name"], hp_b["name"]], [ram_a, ram_b])
         ax_ram.set_ylabel("RAM (GB)")
