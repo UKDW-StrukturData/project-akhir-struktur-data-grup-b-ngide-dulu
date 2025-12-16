@@ -67,7 +67,7 @@ with col2:
 
         if st.button("Mulai Bandingkan", key="btn_compare", use_container_width=True):
             st.toast("Mengalihkan ke halaman Perbandingan...", icon="⚖️")
-            st.switch_page("pages/03_⚖️_Bandingkan_HP.py")
+            st.switch_page("pages/03_Bandingkan_HP.py")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
