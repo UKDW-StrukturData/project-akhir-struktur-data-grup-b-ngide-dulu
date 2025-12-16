@@ -2,20 +2,19 @@ import streamlit as st
 import requests
 import re
 import google.generativeai as genai
-import os
-from dotenv import load_dotenv
-load_dotenv()
 from data import load_local_data   # ⬅️ tambahkan ini
 
-RAPIDAPI_KEY = os.environ["RAPIDAPI_KEY"]
+# ========== API KEYS dengan Streamlit Secrets ==========
+RAPIDAPI_KEY = st.secrets["RAPIDAPI_KEY"]
+API_KEY = st.secrets["GEMINI_API_KEY"]  # Untuk Gemini AI
+
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
 
 # ========== Gemini AI ==========
-API_KEY = os.environ["GEMINI_API_KEY"]
-
 genai.configure(api_key=API_KEY)
 ai_model = genai.GenerativeModel("gemini-2.5-flash")
+
 # cek login
 if not st.session_state.get("logged_in", False):
     st.warning("Silakan login terlebih dahulu untuk mengakses halaman ini.")
