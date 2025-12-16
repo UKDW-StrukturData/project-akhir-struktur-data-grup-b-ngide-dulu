@@ -1,12 +1,15 @@
+import matplotlib
+matplotlib.use("Agg")
+
 import streamlit as st
 import requests
 import pandas as pd
-from data import load_local_data
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from fpdf import FPDF
 import tempfile
 
+from data import load_local_data
 
 # ================= CONFIG =================
 st.set_page_config(page_title="Bandingkan HP", page_icon="⚖️", layout="wide")
