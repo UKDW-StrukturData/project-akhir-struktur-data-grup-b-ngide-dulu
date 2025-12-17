@@ -4,5 +4,7 @@ requests
 numpy<2.0
 plotly
 matplotlib
+matplotlib.pyplotli
+matplotlib.pyplot
 fpdf
 
