@@ -7,6 +7,7 @@ import requests
 import pandas as pd
 import numpy as np
 
+
 from fpdf import FPDF
 import tempfile
 

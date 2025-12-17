@@ -10,6 +10,7 @@ try:
     model = genai.GenerativeModel("gemini-2.5-flash")
 except Exception:
     model = None
+    
 
 # ================= AI CONSULTATION (BEBAS) =================
 def ask_ai_consultant(user_query: str) -> str:

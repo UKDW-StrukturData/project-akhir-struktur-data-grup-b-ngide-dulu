@@ -8,8 +8,10 @@ from data import load_local_data   # ⬅️ tambahkan ini
 RAPIDAPI_KEY = st.secrets["RAPIDAPI_KEY"]
 API_KEY = st.secrets["GEMINI_API_KEY"]  # Untuk Gemini AI
 
+
 SMARTPHONE_API_URL = "https://smart-phone-api1.p.rapidapi.com/sphone"
 SMARTPHONE_API_HOST = "smart-phone-api1.p.rapidapi.com"
+
 
 # ========== Gemini AI ==========
 genai.configure(api_key=API_KEY)
