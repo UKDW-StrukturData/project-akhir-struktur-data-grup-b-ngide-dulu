@@ -1,9 +1,9 @@
 import streamlit as st
-import matplotlib as plt
 import requests
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 from fpdf import FPDF
 import tempfile
@@ -192,9 +192,10 @@ if st.button("Bandingkan"):
         fig.update_layout(barmode='group', title="Perbandingan Harga, Baterai, Storage")
         st.plotly_chart(fig)
 
-        # Simpan untuk PDF
-        tmp_chart = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        fig.write_image(tmp_chart.name, format="png", width=500, height=300)
+        # Simpan untuk PDF (gunakan context manager sehingga file ditutup)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_chart:
+            fig.write_image(tmp_chart.name, format="png", width=500, height=300)
+            tmp_chart_name = tmp_chart.name
 
     with viz_col2:
         st.markdown("### 📊 Perbandingan RAM")
@@ -211,10 +212,12 @@ if st.button("Bandingkan"):
         plt.tight_layout()
         st.pyplot(fig_ram)
         
-        # Simpan untuk PDF
-        tmp_ram = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        fig_ram.savefig(tmp_ram.name, bbox_inches="tight", dpi=100)
-
+        # Simpan untuk PDF (gunakan context manager dan tutup figure)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_ram:
+            fig_ram.savefig(tmp_ram.name, bbox_inches="tight", dpi=100)
+            tmp_ram_name = tmp_ram.name
+        plt.close(fig_ram)
+        
     # ================= EXPORT PDF =================
     st.markdown("## 📄 Download Sebagai PDF")
 
@@ -274,9 +277,9 @@ if st.button("Bandingkan"):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Grafik Perbandingan HP", ln=True)
 
-    pdf.image(tmp_chart.name, x=20, w=170)
+    pdf.image(tmp_chart_name, x=20, w=170)
     pdf.ln(5)
-    pdf.image(tmp_ram.name, x=30, w=150)
+    pdf.image(tmp_ram_name, x=30, w=150)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         pdf.output(tmp.name)
