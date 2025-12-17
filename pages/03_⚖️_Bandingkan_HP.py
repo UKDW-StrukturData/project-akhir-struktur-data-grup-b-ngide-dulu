@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 from fpdf import FPDF
@@ -183,19 +182,27 @@ if st.button("Bandingkan"):
         st.markdown("### 📈 Grafik Utama")
 
         labels = ["Harga", "Baterai", "Storage"]
-        a_vals = [extract_number(hp_a.get(k)) for k in ["price","battery","storage"]]
-        b_vals = [extract_number(hp_b.get(k)) for k in ["price","battery","storage"]]
+        a_vals = [extract_number(hp_a.get(k)) for k in ["price", "battery", "storage"]]
+        b_vals = [extract_number(hp_b.get(k)) for k in ["price", "battery", "storage"]]
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=labels, y=a_vals, name=hp_a["name"], offsetgroup=0))
-        fig.add_trace(go.Bar(x=labels, y=b_vals, name=hp_b["name"], offsetgroup=1))
-        fig.update_layout(barmode='group', title="Perbandingan Harga, Baterai, Storage")
-        st.plotly_chart(fig)
+        # matplotlib grouped bar chart
+        x = np.arange(len(labels))
+        width = 0.35
+        fig_main, ax_main = plt.subplots(figsize=(6, 4))
+        ax_main.bar(x - width/2, a_vals, width, label=hp_a["name"])
+        ax_main.bar(x + width/2, b_vals, width, label=hp_b["name"])
+        ax_main.set_xticks(x)
+        ax_main.set_xticklabels(labels)
+        ax_main.set_title("Perbandingan Harga, Baterai, Storage")
+        ax_main.legend()
+        plt.tight_layout()
+        st.pyplot(fig_main)
 
-        # Simpan untuk PDF (gunakan context manager sehingga file ditutup)
+        # Simpan untuk PDF (context manager) dan tutup figure
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_chart:
-            fig.write_image(tmp_chart.name, format="png", width=500, height=300)
+            fig_main.savefig(tmp_chart.name, bbox_inches="tight", dpi=100)
             tmp_chart_name = tmp_chart.name
+        plt.close(fig_main)
 
     with viz_col2:
         st.markdown("### 📊 Perbandingan RAM")
