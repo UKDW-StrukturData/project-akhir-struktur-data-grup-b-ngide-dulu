@@ -1,12 +1,8 @@
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-
+import plotly.graph_objects as go
 
 from fpdf import FPDF
 import tempfile
@@ -184,25 +180,20 @@ if st.button("Bandingkan"):
     
     with viz_col1:
         st.markdown("### 📈 Grafik Utama")
-        
+
         labels = ["Harga", "Baterai", "Storage"]
         a_vals = [extract_number(hp_a.get(k)) for k in ["price","battery","storage"]]
         b_vals = [extract_number(hp_b.get(k)) for k in ["price","battery","storage"]]
 
-        fig, ax = plt.subplots(figsize=(5, 3))
-        
-        x = np.arange(len(labels))
-        ax.bar(x - 0.2, a_vals, 0.4, label=hp_a["name"])
-        ax.bar(x + 0.2, b_vals, 0.4, label=hp_b["name"])
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
-        ax.legend()
-        plt.tight_layout()
-        st.pyplot(fig)
-        
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=labels, y=a_vals, name=hp_a["name"], offsetgroup=0))
+        fig.add_trace(go.Bar(x=labels, y=b_vals, name=hp_b["name"], offsetgroup=1))
+        fig.update_layout(barmode='group', title="Perbandingan Harga, Baterai, Storage")
+        st.plotly_chart(fig)
+
         # Simpan untuk PDF
         tmp_chart = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        fig.savefig(tmp_chart.name, bbox_inches="tight", dpi=100)
+        fig.write_image(tmp_chart.name, format="png", width=500, height=300)
 
     with viz_col2:
         st.markdown("### 📊 Perbandingan RAM")

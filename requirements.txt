@@ -2,6 +2,6 @@ streamlit
 pandas
 requests
 numpy<2.0
-matplotlib==3.7.1
+plotly
 fpdf
 
